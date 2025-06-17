@@ -56,7 +56,7 @@ class MenuBarController: ObservableObject {
         menu.addItem(NSMenuItem.separator())
         
         // Display mode menu - simplified structure
-        let displayModeItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
+        let displayModeItem = NSMenuItem(title: "Show Consumption", action: nil, keyEquivalent: "")
         let displayModeSubmenu = NSMenu()
         
         // Instant consumption
@@ -187,7 +187,7 @@ class MenuBarController: ObservableObject {
     
     private func updateDisplayModeMenu() {
         guard let menu = statusItem?.menu,
-              let showItem = menu.item(withTitle: "Show"),
+              let showItem = menu.item(withTitle: "Show Consumption"),
               let showSubmenu = showItem.submenu else { return }
         
         // Update checkmarks for display mode
