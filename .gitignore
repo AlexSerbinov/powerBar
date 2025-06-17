@@ -27,3 +27,5 @@ PowerBar/.build/
 *.swp
 *.swo
 *~ 
+
+.cursorrules

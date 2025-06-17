@@ -1,81 +1,229 @@
 # PowerBar
 
-macOS menu bar application that displays real-time power consumption using data from the `macmon` utility.
+A sleek macOS menu bar application that displays real-time power consumption data using the `macmon` utility. PowerBar provides instant and averaged power metrics directly in your menu bar with customizable time periods.
 
-## Features
+![PowerBar Screenshot](https://via.placeholder.com/400x200/2D2D2D/FFFFFF?text=PowerBar+Menu+Bar+App)
 
-- 📊 Real-time power consumption display in menu bar
-- ⚡ Shows total power usage in watts (e.g., "4.8W")
-- 📋 Detailed breakdown via tooltip and menu (CPU, GPU, RAM, System)
-- 🔄 Auto-refresh with macmon's default interval (1000ms)
-- 🎯 Lightweight menu bar only app (no dock icon)
-- ❌ Error handling for macmon unavailability
+## ✨ Features
 
-## Requirements
+### 📊 Real-time Power Monitoring
+- **Instant Power Display**: Shows current power consumption in menu bar (e.g., "14.2W")
+- **Detailed Breakdown**: CPU, GPU, RAM, and System power consumption via tooltip
+- **Multiple Display Modes**: Choose between instant readings or time-averaged values
 
-- macOS 13.0 or later
-- `macmon` utility installed and available in PATH
-  - Install via: `brew install macmon` (if available)
-  - Or download from: [macmon repository](https://github.com/vladkens/macmon)
+### ⏱️ Flexible Averaging Options
+- **5 seconds** - Quick smoothing for immediate trends
+- **10 seconds** - Short-term averaging
+- **30 seconds** - Medium-term trends
+- **1 minute** - Balanced view of power usage
+- **5 minutes** - Longer-term patterns
+- **10 minutes** - Extended monitoring
+- **30 minutes** - Half-hour averages
+- **1 hour** - Long-term power consumption
+- **All Time Average** - Complete session average since app start
 
-## Installation
+### 🎯 User Experience
+- **Menu Bar Only**: Lightweight app with no dock icon (`LSUIElement = YES`)
+- **Auto-refresh**: Continuous updates every ~1 second via macmon
+- **Error Handling**: Graceful degradation when macmon is unavailable
+- **Native macOS Integration**: Follows system appearance and conventions
 
-### Option 1: Build from Source
+## 📋 Requirements
 
-1. Clone this repository
-2. Open terminal and navigate to PowerBar directory
-3. Build and run:
-   ```bash
-   swift build -c release
-   .build/release/PowerBar
-   ```
+### System Requirements
+- **macOS 13.0** or later
+- **Apple Silicon** or Intel Mac with power monitoring support
 
-### Option 2: Xcode
+### Dependencies
+- **macmon utility** - Required for power data collection
+  - Install via Homebrew: `brew install macmon`
+  - Or download from: [macmon GitHub repository](https://github.com/vladkens/macmon)
+  - Verify installation: `macmon --version`
 
-1. Open `PowerBar` folder in Xcode
-2. Build and run the project
-3. The app will appear in your menu bar
+## 🚀 Installation
 
-## Usage
+### Option 1: Pre-built Release (Recommended)
+1. Download the latest `PowerBar.app` from [Releases](https://github.com/AlexSerbinov/powerBar/releases)
+2. Move to `/Applications/` folder
+3. Right-click and select "Open" to bypass Gatekeeper (first launch only)
 
-1. Launch PowerBar
-2. Check your menu bar for power consumption display (e.g., "2.4W")
-3. Click the menu bar item to see:
-   - Detailed power breakdown
-   - Refresh option
-   - Start/Stop monitoring
-   - Quit option
+### Option 2: Build from Source
+```bash
+# Clone the repository
+git clone https://github.com/AlexSerbinov/powerBar.git
+cd powerBar
 
-## Menu Options
+# Build the application
+./build.sh
 
-- **Power Details**: Shows CPU, GPU, RAM, System power breakdown
-- **Refresh**: Restart macmon connection
-- **Start/Stop Monitoring**: Toggle power monitoring
-- **Quit PowerBar**: Exit the application
+# Install to Applications folder
+./install.sh
 
-## Troubleshooting
+# Launch PowerBar
+open /Applications/PowerBar.app
+```
 
-**"macmon is not installed or not in PATH"**
-- Install macmon utility first
-- Ensure it's accessible via command line: `macmon --version`
+### Option 3: Development Build
+```bash
+# Quick development run
+swift build -c release
+./.build/release/PowerBar
+```
 
-**"macmon process terminated unexpectedly"**
-- Check if macmon has proper permissions
-- Try running `macmon pipe` manually in terminal
+## 🎮 Usage
 
-**Power display shows "Error"**
-- macmon might not be responding
-- Use "Refresh" from the menu
-- Restart PowerBar
+### Getting Started
+1. **Launch PowerBar** - The app will appear in your menu bar
+2. **Check Display** - Look for power consumption (e.g., "13.4W") in the menu bar
+3. **Access Menu** - Click the menu bar item to see all options
 
-## Technical Details
+### Menu Structure
+```
+PowerBar Menu
+├── Show
+│   ├── ✓ Instant                    # Real-time power readings
+│   ├── 5 seconds                    # 5-second average
+│   ├── 10 seconds                   # 10-second average
+│   ├── 30 seconds                   # 30-second average
+│   ├── 1 minute                     # 1-minute average
+│   ├── 5 minutes                    # 5-minute average
+│   ├── 10 minutes                   # 10-minute average
+│   ├── 30 minutes                   # 30-minute average
+│   ├── 1 hour                       # 1-hour average
+│   └── All Time Average             # Complete session average
+└── Quit PowerBar                    # Exit application
+```
 
-- Built with Swift and SwiftUI
-- Uses AppKit for menu bar integration
-- Launches `macmon pipe` as subprocess
-- Parses JSON output in real-time
-- Reactive UI updates via Combine framework
+### Display Modes Explained
 
-## License
+#### Instant Mode (Default)
+- Shows real-time power consumption as reported by macmon
+- Updates approximately every second
+- Best for: Monitoring immediate power changes, testing power states
 
-MIT License - see LICENSE file for details. 
+#### Averaging Modes
+- Calculates moving averages over specified time periods
+- Smooths out power spikes and provides trend information
+- Maintains history buffer (up to 1 hour) for calculations
+- Best for: Understanding sustained power usage patterns
+
+## 🔧 Technical Details
+
+### Architecture
+- **Language**: Swift 5.9+
+- **Frameworks**: AppKit, SwiftUI, Combine
+- **Build System**: Swift Package Manager
+- **Process Management**: Subprocess integration with macmon
+
+### Data Flow
+1. **macmon Integration**: Launches `macmon pipe` as subprocess
+2. **JSON Parsing**: Reads streaming JSON data from macmon stdout
+3. **Data Processing**: Parses power metrics and maintains history buffer
+4. **UI Updates**: Reactive updates via Combine publishers
+5. **Menu Bar Display**: Real-time updates in NSStatusItem
+
+### Key Components
+```
+PowerBar/
+├── Sources/PowerBar/
+│   ├── main.swift                    # App entry point
+│   ├── Models/
+│   │   └── MacMonMetrics.swift       # Data models for macmon JSON
+│   ├── Services/
+│   │   └── PowerManager.swift        # Process management & averaging
+│   └── Controllers/
+│       └── MenuBarController.swift   # Menu bar UI and interactions
+├── Package.swift                     # Swift Package Manager configuration
+├── Info.plist                       # App bundle configuration
+└── build scripts                    # Build and installation automation
+```
+
+### Power Metrics
+PowerBar displays the following metrics from macmon:
+- **All Power**: Total system power consumption
+- **CPU Power**: Processor power usage
+- **GPU Power**: Graphics processor power
+- **RAM Power**: Memory subsystem power
+- **System Power**: Other system components
+
+## 🛠️ Development
+
+### Building
+```bash
+# Clean build
+make clean && make build
+
+# Development run
+make run
+
+# Install to Applications
+make install
+```
+
+### Project Structure
+- **Reactive Architecture**: Uses Combine for data flow
+- **Error Handling**: Comprehensive error states and recovery
+- **Memory Management**: Efficient history buffer with automatic cleanup
+- **Process Lifecycle**: Proper subprocess management and cleanup
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### "macmon is not installed or not in PATH"
+```bash
+# Install macmon
+brew install macmon
+
+# Verify installation
+macmon --version
+which macmon
+```
+
+#### "macmon process terminated unexpectedly"
+- Check macmon permissions: `macmon pipe` should run without sudo
+- Verify macmon works independently: `macmon --help`
+- Restart PowerBar: Quit and relaunch the application
+
+#### Power display shows "Error" or "--"
+- macmon might not be responding properly
+- Try running `macmon pipe` manually in Terminal
+- Check Console.app for PowerBar error messages
+- Restart both macmon and PowerBar
+
+#### Menu bar icon missing or blank
+- Icon cache issue - restart Finder: `killall Finder`
+- Reinstall: `./install.sh` to refresh app bundle
+- Check `/Applications/PowerBar.app/Contents/Resources/` for icon file
+
+### Debug Mode
+Run PowerBar from Terminal to see debug output:
+```bash
+# Kill any running instance
+pkill -f PowerBar
+
+# Run with debug output
+./.build/release/PowerBar
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [macmon](https://github.com/vladkens/macmon) - Essential power monitoring utility
+- Apple's AppKit and SwiftUI frameworks
+- Swift Package Manager for dependency management
+
+---
+
+**PowerBar** - Keep track of your Mac's power consumption, one watt at a time. ⚡ 

@@ -69,7 +69,7 @@ class MenuBarController: ObservableObject {
         
         // Average options directly in submenu (no nested submenu)
         for period in powerManager.availableAveragePeriods {
-            let avgItem = NSMenuItem(title: "\(period)s Average", action: #selector(setDisplayMode(_:)), keyEquivalent: "")
+            let avgItem = NSMenuItem(title: friendlyName(for: period), action: #selector(setDisplayMode(_:)), keyEquivalent: "")
             avgItem.target = self
             avgItem.tag = period
             displayModeSubmenu.addItem(avgItem)
@@ -102,6 +102,26 @@ class MenuBarController: ObservableObject {
         menu.addItem(quitItem)
         
         statusItem.menu = menu
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func friendlyName(for seconds: Int) -> String {
+        if seconds == 0 {
+            return "All Time Average"
+        }
+        
+        switch seconds {
+        case 5: return "5 seconds"
+        case 10: return "10 seconds"
+        case 30: return "30 seconds"
+        case 60: return "1 minute"
+        case 300: return "5 minutes"
+        case 600: return "10 minutes"
+        case 1800: return "30 minutes"
+        case 3600: return "1 hour"
+        default: return "\(seconds) seconds"
+        }
     }
     
     private func setupObservers() {
@@ -195,8 +215,8 @@ class MenuBarController: ObservableObject {
             if item.tag == -1 {
                 // Instant mode
                 item.state = (powerManager.displayMode == .instant) ? .on : .off
-            } else if item.tag > 0 {
-                // Average mode
+            } else if item.tag >= 0 {
+                // Average mode (including tag 0 for max)
                 if case .average(let seconds) = powerManager.displayMode, seconds == item.tag {
                     item.state = .on
                 } else {
@@ -214,8 +234,8 @@ class MenuBarController: ObservableObject {
             // Instant mode
             print("MenuBarController: Setting instant mode")
             powerManager.setDisplayMode(.instant)
-        } else if sender.tag > 0 {
-            // Average mode
+        } else if sender.tag >= 0 {
+            // Average mode (including tag 0 for max)
             print("MenuBarController: Setting average mode for \(sender.tag) seconds")
             powerManager.setDisplayMode(.average(seconds: sender.tag))
         }

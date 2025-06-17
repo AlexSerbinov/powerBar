@@ -44,10 +44,10 @@ class PowerManager: ObservableObject {
     
     // Power history for averaging
     private var powerHistory: [PowerReading] = []
-    private let maxHistoryDuration: TimeInterval = 120  // 2 minutes
+    private let maxHistoryDuration: TimeInterval = 3600  // 1 hour
     
-    // Available periods for averaging
-    let availableAveragePeriods = [5, 10, 30, 60]
+    // Available periods for averaging (0 means max/all history)
+    let availableAveragePeriods = [5, 10, 30, 60, 300, 600, 1800, 3600, 0]
     
     func startMonitoring() {
         guard !isRunning else { return }
@@ -100,10 +100,17 @@ class PowerManager: ObservableObject {
             return nil 
         }
         
-        let cutoffTime = Date().addingTimeInterval(-TimeInterval(seconds))
-        let recentReadings = powerHistory.filter { $0.timestamp >= cutoffTime }
+        let recentReadings: [PowerReading]
         
-        print("PowerManager: Found \(recentReadings.count) readings for \(seconds)s average out of \(powerHistory.count) total")
+        if seconds == 0 {
+            // Special case: 0 means use all available history
+            recentReadings = powerHistory
+            print("PowerManager: Using all \(powerHistory.count) readings for max calculation")
+        } else {
+            let cutoffTime = Date().addingTimeInterval(-TimeInterval(seconds))
+            recentReadings = powerHistory.filter { $0.timestamp >= cutoffTime }
+            print("PowerManager: Found \(recentReadings.count) readings for \(seconds)s average out of \(powerHistory.count) total")
+        }
         
         guard !recentReadings.isEmpty else { 
             print("PowerManager: No recent readings for \(seconds)s period")
@@ -113,7 +120,11 @@ class PowerManager: ObservableObject {
         let avgAllPower = recentReadings.map { $0.allPower }.reduce(0, +) / Double(recentReadings.count)
         let avgSysPower = recentReadings.map { $0.sysPower }.reduce(0, +) / Double(recentReadings.count)
         
-        print("PowerManager: Average for \(seconds)s: sys=\(String(format: "%.1f", avgSysPower))W, all=\(String(format: "%.1f", avgAllPower))W")
+        if seconds == 0 {
+            print("PowerManager: Average for all history: sys=\(String(format: "%.1f", avgSysPower))W, all=\(String(format: "%.1f", avgAllPower))W")
+        } else {
+            print("PowerManager: Average for \(seconds)s: sys=\(String(format: "%.1f", avgSysPower))W, all=\(String(format: "%.1f", avgAllPower))W")
+        }
         
         return (allPower: avgAllPower, sysPower: avgSysPower)
     }
