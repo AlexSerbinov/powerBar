@@ -10,6 +10,7 @@ A sleek macOS menu bar application that displays real-time power consumption dat
 - **Instant Power Display**: Shows current power consumption in menu bar (e.g., "14.2W")
 - **Detailed Breakdown**: CPU, GPU, RAM, and System power consumption via tooltip
 - **Multiple Display Modes**: Choose between instant readings or time-averaged values
+- **Interactive Graph**: Right-click the menu bar icon to view a Swift Charts graph of power usage over time
 
 ### ⏱️ Flexible Averaging Options
 - **5 seconds** - Quick smoothing for immediate trends
@@ -21,6 +22,9 @@ A sleek macOS menu bar application that displays real-time power consumption dat
 - **30 minutes** - Half-hour averages
 - **1 hour** - Long-term power consumption
 - **All Time Average** - Complete session average since app start
+
+### 📈 Graph Periods
+- **1 minute**, **10 minutes**, **1 hour**, **6 hours** selectable in the graph view
 
 ### 🎯 User Experience
 - **Menu Bar Only**: Lightweight app with no dock icon (`LSUIElement = YES`)

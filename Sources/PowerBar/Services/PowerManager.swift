@@ -49,6 +49,9 @@ class PowerManager: ObservableObject {
     // Available periods for averaging (0 means max/all history)
     let availableAveragePeriods = [5, 10, 30, 60, 300, 600, 1800, 3600, 0]
     
+    // Available periods for graphing
+    let availableGraphPeriods = [60, 600, 3600, 21600]
+
     func startMonitoring() {
         guard !isRunning else { return }
         
@@ -127,6 +130,14 @@ class PowerManager: ObservableObject {
         }
         
         return (allPower: avgAllPower, sysPower: avgSysPower)
+    }
+    func readings(for seconds: Int) -> [PowerReading] {
+        if seconds == 0 {
+            return powerHistory
+        } else {
+            let cutoff = Date().addingTimeInterval(-TimeInterval(seconds))
+            return powerHistory.filter { $0.timestamp >= cutoff }
+        }
     }
     
     // MARK: - Private Methods

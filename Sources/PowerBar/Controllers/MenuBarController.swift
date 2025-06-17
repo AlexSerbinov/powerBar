@@ -7,6 +7,7 @@ class MenuBarController: ObservableObject {
     private var statusItem: NSStatusItem?
     private var powerManager = PowerManager()
     private var cancellables = Set<AnyCancellable>()
+    private var graphPopover: NSPopover?
     
     // Update intervals in milliseconds
     private let availableIntervals = [100, 250, 500, 1000, 2500]
@@ -38,7 +39,11 @@ class MenuBarController: ObservableObject {
         // Configure button
         button.title = "Loading..."
         button.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
-        
+
+        let rightClick = NSClickGestureRecognizer(target: self, action: #selector(showGraph))
+        rightClick.buttonMask = 0x2
+        button.addGestureRecognizer(rightClick)
+
         // Create menu
         updateMenu()
     }
@@ -244,6 +249,22 @@ class MenuBarController: ObservableObject {
     @objc private func setInterval(_ sender: NSMenuItem) {
         let newInterval = sender.tag
         powerManager.setUpdateInterval(newInterval)
+    }
+
+    @objc private func showGraph() {
+        if graphPopover == nil {
+            let view = PowerGraphView(powerManager: powerManager)
+            let hosting = NSHostingController(rootView: view)
+            let popover = NSPopover()
+            popover.contentSize = NSSize(width: 340, height: 260)
+            popover.behavior = .transient
+            popover.contentViewController = hosting
+            graphPopover = popover
+        }
+
+        if let button = statusItem?.button, let popover = graphPopover {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        }
     }
     
     @objc private func quitAction() {
