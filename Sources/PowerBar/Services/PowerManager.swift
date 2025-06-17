@@ -32,32 +32,26 @@ class PowerManager: ObservableObject {
     @Published var currentMetrics: MacMonMetrics?
     @Published var isRunning = false
     @Published var errorMessage: String?
-    @Published var updateInterval: Int = 1000 // milliseconds
+    @Published var updateInterval = 1000  // milliseconds
     @Published var displayMode: DisplayMode = .instant
     
     private var macmonProcess: Process?
-    private var cancellables = Set<AnyCancellable>()
-    
-    // History tracking for averages
-    private var powerHistory: [PowerReading] = []
-    private let maxHistoryDuration: TimeInterval = 300 // 5 minutes max history
-    
-    // Available average periods
-    let availableAveragePeriods = [5, 10, 30, 60] // seconds
-    
-    // Possible macmon locations
     private let macmonPaths = [
         "/opt/homebrew/bin/macmon",
         "/usr/local/bin/macmon",
         "/usr/bin/macmon"
     ]
     
-    // MARK: - Lifecycle
+    // Power history for averaging
+    private var powerHistory: [PowerReading] = []
+    private let maxHistoryDuration: TimeInterval = 120  // 2 minutes
+    
+    // Available periods for averaging
+    let availableAveragePeriods = [5, 10, 30, 60]
     
     func startMonitoring() {
         guard !isRunning else { return }
         
-        // Check if macmon is available
         guard let macmonPath = findMacMon() else {
             errorMessage = "macmon is not installed or not in PATH"
             return
@@ -89,6 +83,7 @@ class PowerManager: ObservableObject {
     }
     
     func setDisplayMode(_ mode: DisplayMode) {
+        print("PowerManager: Setting display mode to \(mode)")
         displayMode = mode
     }
     
@@ -100,15 +95,25 @@ class PowerManager: ObservableObject {
     }
     
     private func getAverageForPeriod(_ seconds: Int) -> (allPower: Double, sysPower: Double)? {
-        guard !powerHistory.isEmpty else { return nil }
+        guard !powerHistory.isEmpty else { 
+            print("PowerManager: No power history available")
+            return nil 
+        }
         
         let cutoffTime = Date().addingTimeInterval(-TimeInterval(seconds))
         let recentReadings = powerHistory.filter { $0.timestamp >= cutoffTime }
         
-        guard !recentReadings.isEmpty else { return nil }
+        print("PowerManager: Found \(recentReadings.count) readings for \(seconds)s average out of \(powerHistory.count) total")
+        
+        guard !recentReadings.isEmpty else { 
+            print("PowerManager: No recent readings for \(seconds)s period")
+            return nil 
+        }
         
         let avgAllPower = recentReadings.map { $0.allPower }.reduce(0, +) / Double(recentReadings.count)
         let avgSysPower = recentReadings.map { $0.sysPower }.reduce(0, +) / Double(recentReadings.count)
+        
+        print("PowerManager: Average for \(seconds)s: sys=\(String(format: "%.1f", avgSysPower))W, all=\(String(format: "%.1f", avgAllPower))W")
         
         return (allPower: avgAllPower, sysPower: avgSysPower)
     }
@@ -206,6 +211,9 @@ class PowerManager: ObservableObject {
                     )
                     self.powerHistory.append(reading)
                     self.cleanupOldReadings()
+                    
+                    // Debug current mode
+                    print("PowerManager: Updated metrics, current mode: \(self.displayMode)")
                 }
             } catch {
                 print("Failed to decode JSON: \(error)")
@@ -224,11 +232,15 @@ extension PowerManager {
         } else if let metrics = currentMetrics {
             switch displayMode {
             case .instant:
+                print("PowerManager: Displaying instant value: \(metrics.formattedPower)")
                 return metrics.formattedPower
             case .average(let seconds):
                 if let average = getAverageForPeriod(seconds) {
-                    return String(format: "%.1fW", average.sysPower)
+                    let averageText = String(format: "%.1fW", average.sysPower)
+                    print("PowerManager: Displaying average value: \(averageText)")
+                    return averageText
                 } else {
+                    print("PowerManager: No average available, falling back to instant")
                     return metrics.formattedPower // Fallback to instant if no average available
                 }
             }
