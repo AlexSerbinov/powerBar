@@ -1,0 +1,82 @@
+# PowerBar Project Rules
+
+## Project Overview
+PowerBar is a macOS menu bar application that displays real-time power consumption data from the macmon utility. It's built with Swift, AppKit, and SwiftUI.
+
+## Key Patterns & Decisions
+
+### Architecture
+- **Menu Bar Only App**: Uses `LSUIElement = YES` to hide from dock
+- **Process Management**: Launches `macmon pipe` as subprocess and reads JSON stdout
+- **Reactive UI**: Uses Combine framework with @Published properties for real-time updates
+- **Error Handling**: Graceful degradation when macmon is unavailable
+
+### Code Organization
+```
+PowerBar/
+├── Sources/PowerBar/
+│   ├── main.swift              # App entry point, NSApplication setup
+│   ├── Models/
+│   │   └── MacMonMetrics.swift # Codable models for macmon JSON
+│   ├── Services/
+│   │   └── PowerManager.swift  # Process management & data parsing
+│   └── Controllers/
+│       └── MenuBarController.swift # NSStatusItem & menu management
+├── Package.swift               # Swift Package Manager config
+├── Info.plist                 # App bundle configuration
+└── build scripts              # Shell scripts for build/install
+```
+
+### Technical Patterns
+
+#### JSON Parsing
+- Uses Codable with snake_case mapping (all_power -> allPower)
+- Handles streaming JSON (one object per line from macmon pipe)
+- Robust error handling for malformed JSON
+
+#### Process Management
+- Asynchronous stdout reading via Pipe and readabilityHandler
+- Proper process lifecycle (start/stop/cleanup)
+- which command check for macmon availability
+
+#### Menu Bar Integration
+- NSStatusItem with variable length for power display
+- Monospaced font for consistent number display
+- Tooltip with detailed breakdown
+- Context menu with controls
+
+### User Experience Decisions
+- **Primary Display**: Shows "X.XW" format in menu bar
+- **Tooltip**: Shows detailed breakdown (CPU, GPU, RAM, System)
+- **Menu Options**: Refresh, Start/Stop, Quit
+- **Error States**: Clear error messaging and recovery options
+
+### Build System
+- Swift Package Manager for dependencies and building
+- Shell scripts (build.sh, install.sh) for easy deployment
+- Makefile for common development tasks
+- Creates proper .app bundle for /Applications installation
+
+### Dependencies
+- **External**: macmon utility (must be in PATH)
+- **Internal**: Swift stdlib, Foundation, AppKit, SwiftUI, Combine
+
+## Development Workflow
+1. `make check` - Verify macmon is available
+2. `make build` - Build in release mode
+3. `make run` - Build and run directly
+4. `make install` - Install to /Applications
+5. `make clean` - Clean build artifacts
+
+## Common Issues & Solutions
+- **macmon not found**: Install via brew or download from GitHub
+- **Process termination**: Check macmon permissions and PATH
+- **JSON parsing errors**: Usually partial lines, ignore individual failures
+- **Menu bar not updating**: Check Combine publishers and main thread dispatch
+
+## Future Enhancements
+- Customizable refresh intervals
+- Historical data tracking
+- Temperature display options
+- Power usage alerts/thresholds
+- Charts and graphs in menu 

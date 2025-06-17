@@ -1,0 +1,29 @@
+# Xcode
+.build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+
+# Swift Package Manager
+Packages/
+Package.resolved
+.swiftpm/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build products
+PowerBar/.build/
+*.app
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~ 
