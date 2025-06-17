@@ -30,20 +30,20 @@ class MenuBarController: ObservableObject {
     private func createStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
-        guard let statusItem = statusItem else { return }
-        
-        // Configure button
-        if let button = statusItem.button {
-            button.title = "Loading..."
-            button.font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
-            button.toolTip = "PowerBar - macOS Power Monitor"
+        guard let button = statusItem?.button else {
+            print("Failed to create status item button")
+            return
         }
         
-        // Setup menu
-        setupMenu()
+        // Configure button
+        button.title = "Loading..."
+        button.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+        
+        // Create menu
+        updateMenu()
     }
     
-    private func setupMenu() {
+    private func updateMenu() {
         guard let statusItem = statusItem else { return }
         
         let menu = NSMenu()
@@ -55,7 +55,7 @@ class MenuBarController: ObservableObject {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Display mode menu
+        // Display mode menu - simplified structure
         let displayModeItem = NSMenuItem(title: "Show", action: nil, keyEquivalent: "")
         let displayModeSubmenu = NSMenu()
         
@@ -67,19 +67,13 @@ class MenuBarController: ObservableObject {
         
         displayModeSubmenu.addItem(NSMenuItem.separator())
         
-        // Average submenu
-        let averageItem = NSMenuItem(title: "Average", action: nil, keyEquivalent: "")
-        let averageSubmenu = NSMenu()
-        
+        // Average options directly in submenu (no nested submenu)
         for period in powerManager.availableAveragePeriods {
-            let avgItem = NSMenuItem(title: "\(period)s", action: #selector(setDisplayMode(_:)), keyEquivalent: "")
+            let avgItem = NSMenuItem(title: "\(period)s Average", action: #selector(setDisplayMode(_:)), keyEquivalent: "")
             avgItem.target = self
             avgItem.tag = period
-            averageSubmenu.addItem(avgItem)
+            displayModeSubmenu.addItem(avgItem)
         }
-        
-        averageItem.submenu = averageSubmenu
-        displayModeSubmenu.addItem(averageItem)
         
         displayModeItem.submenu = displayModeSubmenu
         menu.addItem(displayModeItem)
@@ -116,7 +110,7 @@ class MenuBarController: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateStatusItem()
-                self?.updateMenu()
+                self?.updateDetailsMenuItem()
             }
             .store(in: &cancellables)
         
@@ -124,7 +118,7 @@ class MenuBarController: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateStatusItem()
-                self?.updateMenu()
+                self?.updateDetailsMenuItem()
             }
             .store(in: &cancellables)
         
@@ -132,7 +126,7 @@ class MenuBarController: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateStatusItem()
-                self?.updateMenu()
+                self?.updateDetailsMenuItem()
             }
             .store(in: &cancellables)
         
@@ -165,7 +159,7 @@ class MenuBarController: ObservableObject {
         }
     }
     
-    private func updateMenu() {
+    private func updateDetailsMenuItem() {
         guard let menu = statusItem?.menu else { return }
         
         // Update details item
@@ -210,28 +204,19 @@ class MenuBarController: ObservableObject {
                 }
             }
         }
-        
-        // Update average submenu items
-        if let averageItem = showSubmenu.item(withTitle: "Average"),
-           let avgSubmenu = averageItem.submenu {
-            for item in avgSubmenu.items {
-                if case .average(let seconds) = powerManager.displayMode, seconds == item.tag {
-                    item.state = .on
-                } else {
-                    item.state = .off
-                }
-            }
-        }
     }
     
     // MARK: - Actions
     
     @objc private func setDisplayMode(_ sender: NSMenuItem) {
+        print("MenuBarController: Setting display mode with tag \(sender.tag)")
         if sender.tag == -1 {
             // Instant mode
+            print("MenuBarController: Setting instant mode")
             powerManager.setDisplayMode(.instant)
         } else if sender.tag > 0 {
             // Average mode
+            print("MenuBarController: Setting average mode for \(sender.tag) seconds")
             powerManager.setDisplayMode(.average(seconds: sender.tag))
         }
     }
