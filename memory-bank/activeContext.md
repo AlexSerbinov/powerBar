@@ -132,4 +132,140 @@ PowerBar Menu
 **Статус**: ГОТОВИЙ ДО ФІНАЛЬНОГО ТЕСТУВАННЯ ТА РЕЛІЗУ! 🎉
 
 ---
-*Останнє оновлення: 17.01.2025 01:45 - ДОДАНО ФУНКЦІОНАЛЬНІСТЬ БАТАРЕЇ!* 
+*Останнє оновлення: 17.01.2025 01:45 - ДОДАНО ФУНКЦІОНАЛЬНІСТЬ БАТАРЕЇ!*
+
+---
+
+## 🛠️ НОВИЙ ФОКУС: Меню налаштувань (19.01.2025)
+
+### 📋 План створення системи налаштувань:
+
+#### 🎯 **Концепція:**
+- **Швидкий доступ**: Поточні налаштування залишаються в основному меню
+- **Повне меню**: Додаткове "Settings" меню з усіма опціями
+- **Персистентність**: Збереження налаштувань у UserDefaults
+- **UX**: Інтуїтивна організація за категоріями
+
+#### 📱 **Структура нового меню:**
+```
+PowerBar Menu
+├── Power Details
+├── Show Consumption: Instant     ← Швидкий доступ
+├── Update Interval: 1000ms       ← Швидкий доступ  
+├── Battery: 5h 04m - 52.7Wh      ← Швидкий доступ
+├── Show Power Graph
+├── ──────────────────────
+├── ⚙️ Settings                   ← НОВЕ МЕНЮ
+│   ├── 📊 Display
+│   │   ├── Menu Bar Format (X.XW, X.X W, X.X Watts)
+│   │   ├── Decimal Places (0, 1, 2)
+│   │   ├── Font Size (Small, Medium, Large)
+│   │   └── Primary Metric (sys_power, all_power, cpu_power)
+│   ├── ⚡ Monitoring  
+│   │   ├── Auto-start at Login
+│   │   ├── History Duration (1h, 6h, 12h, 24h)
+│   │   ├── Alert Thresholds
+│   │   └── Data Logging
+│   ├── 🔋 Battery
+│   │   ├── Update Frequency (10s, 30s, 1min, 5min)
+│   │   ├── Low Battery Alerts (20%, 10%, 5%)
+│   │   ├── Display Format (Time+Wh, Time only, Wh only)
+│   │   └── Charging Notifications
+│   ├── 🎨 Appearance
+│   │   ├── Tooltip Detail Level
+│   │   ├── Color Coding
+│   │   ├── Dark Mode Integration
+│   │   └── Menu Animations
+│   └── 🔧 Advanced
+│       ├── Export Data (CSV, JSON)
+│       ├── Keyboard Shortcuts
+│       ├── AppleScript Support
+│       └── Reset to Defaults
+└── Quit PowerBar
+```
+
+#### 🔧 **Технічна реалізація:**
+
+##### 1. **Settings Model:**
+```swift
+class SettingsManager: ObservableObject {
+    @Published var menuBarFormat: MenuBarFormat = .standard
+    @Published var decimalPlaces: Int = 1
+    @Published var fontSize: FontSize = .medium
+    @Published var primaryMetric: MetricType = .sysPower
+    @Published var autoStartAtLogin: Bool = false
+    @Published var historyDuration: TimeInterval = 3600
+    // ... інші налаштування
+}
+```
+
+##### 2. **Settings View:**
+```swift
+struct SettingsView: View {
+    @ObservedObject var settings: SettingsManager
+    
+    var body: some View {
+        TabView {
+            DisplaySettingsView(settings: settings)
+                .tabItem { Label("Display", systemImage: "display") }
+            MonitoringSettingsView(settings: settings)
+                .tabItem { Label("Monitoring", systemImage: "bolt") }
+            // ... інші таби
+        }
+    }
+}
+```
+
+##### 3. **Settings Window Controller:**
+```swift
+class SettingsWindowController: NSWindowController {
+    convenience init(settings: SettingsManager) {
+        let window = NSWindow(...)
+        let hostingController = NSHostingController(
+            rootView: SettingsView(settings: settings)
+        )
+        window.contentViewController = hostingController
+        self.init(window: window)
+    }
+}
+```
+
+#### 📊 **Пріоритизація функцій:**
+
+##### **Фаза 1 (Основні):**
+1. ✅ Menu Bar Format options
+2. ✅ Decimal Places control  
+3. ✅ Primary Metric selection
+4. ✅ Auto-start at Login
+5. ✅ Settings persistence
+
+##### **Фаза 2 (Розширені):**
+1. 🔄 Color coding за рівнями споживання
+2. 🔄 Font size options
+3. 🔄 Tooltip detail levels
+4. 🔄 Battery alerts configuration
+5. 🔄 History duration settings
+
+##### **Фаза 3 (Професійні):**
+1. ⏳ Data export functionality
+2. ⏳ Keyboard shortcuts
+3. ⏳ AppleScript integration
+4. ⏳ Multiple profiles
+5. ⏳ Advanced logging
+
+#### 🎯 **Наступні кроки:**
+1. **Створити SettingsManager** - модель для всіх налаштувань
+2. **Додати Settings пункт** в основне меню
+3. **Реалізувати Settings window** з SwiftUI
+4. **Імплементувати UserDefaults** persistence
+5. **Додати основні Display налаштування**
+
+#### 💡 **UX принципи:**
+- **Не перевантажувати**: Швидкий доступ залишається простим
+- **Логічна групування**: Налаштування за категоріями
+- **Live preview**: Миттєвий показ змін
+- **Розумні дефолти**: Працює out-of-the-box
+- **Легке скидання**: Reset to defaults опція
+
+---
+*Оновлено: 19.01.2025 - ПЛАН СТВОРЕННЯ МЕНЮ НАЛАШТУВАНЬ* 
