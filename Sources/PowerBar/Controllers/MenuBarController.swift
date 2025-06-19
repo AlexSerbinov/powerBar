@@ -9,6 +9,10 @@ class MenuBarController: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var graphPopover: NSPopover?
     
+    // Battery time remaining
+    private var batteryTimeMenuItem: NSMenuItem?
+    private var batteryDisplayMode: DisplayMode = .average(seconds: 300) // Default to 5 minutes for battery
+    
     // Update intervals in milliseconds
     private let availableIntervals = [100, 250, 500, 1000, 2500]
     
@@ -40,10 +44,6 @@ class MenuBarController: ObservableObject {
         button.title = "Loading..."
         button.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
 
-        let rightClick = NSClickGestureRecognizer(target: self, action: #selector(showGraph))
-        rightClick.buttonMask = 0x2
-        button.addGestureRecognizer(rightClick)
-
         // Create menu
         updateMenu()
     }
@@ -60,8 +60,9 @@ class MenuBarController: ObservableObject {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Display mode menu - simplified structure
-        let displayModeItem = NSMenuItem(title: "Show Consumption", action: nil, keyEquivalent: "")
+        // Display mode menu - показуємо поточний режим в назві
+        let currentDisplayModeText = powerManager.displayMode.displayName
+        let displayModeItem = NSMenuItem(title: "Show Consumption: \(currentDisplayModeText)", action: nil, keyEquivalent: "")
         let displayModeSubmenu = NSMenu()
         
         // Instant consumption
@@ -85,8 +86,8 @@ class MenuBarController: ObservableObject {
         
         menu.addItem(NSMenuItem.separator())
         
-        // Update interval submenu
-        let intervalItem = NSMenuItem(title: "Update Interval", action: nil, keyEquivalent: "")
+        // Update interval submenu - показуємо поточний інтервал в назві
+        let intervalItem = NSMenuItem(title: "Update Interval: \(powerManager.updateInterval)ms", action: nil, keyEquivalent: "")
         let intervalSubmenu = NSMenu()
         
         for interval in availableIntervals {
@@ -101,12 +102,50 @@ class MenuBarController: ObservableObject {
         
         menu.addItem(NSMenuItem.separator())
         
+        // Battery time remaining item with submenu
+        batteryTimeMenuItem = NSMenuItem(title: "Battery: Calculating...", action: nil, keyEquivalent: "")
+        
+        // Create battery submenu
+        let batterySubmenu = NSMenu()
+        
+        // Instant consumption for battery
+        let batteryInstantItem = NSMenuItem(title: "Instant", action: #selector(setBatteryDisplayMode(_:)), keyEquivalent: "")
+        batteryInstantItem.target = self
+        batteryInstantItem.tag = -1 // Special tag for instant mode
+        batterySubmenu.addItem(batteryInstantItem)
+        
+        batterySubmenu.addItem(NSMenuItem.separator())
+        
+        // Average options for battery
+        for period in powerManager.availableAveragePeriods {
+            let avgItem = NSMenuItem(title: friendlyName(for: period), action: #selector(setBatteryDisplayMode(_:)), keyEquivalent: "")
+            avgItem.target = self
+            avgItem.tag = period
+            batterySubmenu.addItem(avgItem)
+        }
+        
+        batteryTimeMenuItem?.submenu = batterySubmenu
+        menu.addItem(batteryTimeMenuItem!)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // Graph item
+        let graphItem = NSMenuItem(title: "Show Power Graph", action: #selector(showGraph), keyEquivalent: "g")
+        graphItem.target = self
+        menu.addItem(graphItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         // Quit item
         let quitItem = NSMenuItem(title: "Quit PowerBar", action: #selector(quitAction), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
         
         statusItem.menu = menu
+        
+        // Update the menu items after creation
+        updateDisplayModeMenu()
+        updateIntervalMenu()
     }
     
     // MARK: - Helper Methods
@@ -136,6 +175,7 @@ class MenuBarController: ObservableObject {
             .sink { [weak self] _ in
                 self?.updateStatusItem()
                 self?.updateDetailsMenuItem()
+                self?.updateBatteryInfo()
             }
             .store(in: &cancellables)
         
@@ -166,8 +206,13 @@ class MenuBarController: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateDisplayModeMenu()
+                self?.updateBatteryInfo()
             }
             .store(in: &cancellables)
+        
+        // Initial battery update
+        updateBatteryInfo()
+        updateBatteryDisplayModeMenu()
     }
     
     private func updateStatusItem() {
@@ -201,8 +246,12 @@ class MenuBarController: ObservableObject {
     
     private func updateIntervalMenu() {
         guard let menu = statusItem?.menu,
-              let intervalItem = menu.item(withTitle: "Update Interval"),
+              let intervalItem = menu.item(withTitle: "Update Interval") ?? 
+                                 menu.items.first(where: { $0.title.hasPrefix("Update Interval") }),
               let submenu = intervalItem.submenu else { return }
+        
+        // Update the main menu item title with current interval
+        intervalItem.title = "Update Interval: \(powerManager.updateInterval)ms"
         
         // Update checkmarks for current interval
         for item in submenu.items {
@@ -212,8 +261,13 @@ class MenuBarController: ObservableObject {
     
     private func updateDisplayModeMenu() {
         guard let menu = statusItem?.menu,
-              let showItem = menu.item(withTitle: "Show Consumption"),
+              let showItem = menu.item(withTitle: "Show Consumption") ?? 
+                             menu.items.first(where: { $0.title.hasPrefix("Show Consumption") }),
               let showSubmenu = showItem.submenu else { return }
+        
+        // Update the main menu item title with current mode
+        let currentDisplayModeText = powerManager.displayMode.displayName
+        showItem.title = "Show Consumption: \(currentDisplayModeText)"
         
         // Update checkmarks for display mode
         for item in showSubmenu.items {
@@ -223,6 +277,25 @@ class MenuBarController: ObservableObject {
             } else if item.tag >= 0 {
                 // Average mode (including tag 0 for max)
                 if case .average(let seconds) = powerManager.displayMode, seconds == item.tag {
+                    item.state = .on
+                } else {
+                    item.state = .off
+                }
+            }
+        }
+    }
+    
+    private func updateBatteryDisplayModeMenu() {
+        guard let batterySubmenu = batteryTimeMenuItem?.submenu else { return }
+        
+        // Update checkmarks for battery display mode
+        for item in batterySubmenu.items {
+            if item.tag == -1 {
+                // Instant mode
+                item.state = (batteryDisplayMode == .instant) ? .on : .off
+            } else if item.tag >= 0 {
+                // Average mode (including tag 0 for max)
+                if case .average(let seconds) = batteryDisplayMode, seconds == item.tag {
                     item.state = .on
                 } else {
                     item.state = .off
@@ -250,9 +323,27 @@ class MenuBarController: ObservableObject {
         let newInterval = sender.tag
         powerManager.setUpdateInterval(newInterval)
     }
+    
+    @objc private func setBatteryDisplayMode(_ sender: NSMenuItem) {
+        print("MenuBarController: Setting battery display mode with tag \(sender.tag)")
+        if sender.tag == -1 {
+            // Instant mode
+            print("MenuBarController: Setting battery instant mode")
+            batteryDisplayMode = .instant
+        } else if sender.tag >= 0 {
+            // Average mode (including tag 0 for max)
+            print("MenuBarController: Setting battery average mode for \(sender.tag) seconds")
+            batteryDisplayMode = .average(seconds: sender.tag)
+        }
+        
+        updateBatteryDisplayModeMenu()
+        updateBatteryInfo()
+    }
 
     @objc private func showGraph() {
+        print("MenuBarController: showGraph called!")
         if graphPopover == nil {
+            print("MenuBarController: Creating new popover")
             let view = PowerGraphView(powerManager: powerManager)
             let hosting = NSHostingController(rootView: view)
             let popover = NSPopover()
@@ -263,11 +354,64 @@ class MenuBarController: ObservableObject {
         }
 
         if let button = statusItem?.button, let popover = graphPopover {
+            print("MenuBarController: Showing popover")
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+        } else {
+            print("MenuBarController: Failed to show popover - button or popover is nil")
         }
     }
     
     @objc private func quitAction() {
         NSApplication.shared.terminate(nil)
+    }
+    
+    // MARK: - Battery Methods
+    
+    private func updateBatteryInfo() {
+        guard let batteryInfo = BatteryService.getBatteryInfo() else {
+            print("MenuBarController: Battery info unavailable")
+            batteryTimeMenuItem?.title = "Battery: Unavailable"
+            batteryTimeMenuItem?.isHidden = false
+            return
+        }
+        
+        // Always show the battery menu item
+        batteryTimeMenuItem?.isHidden = false
+        
+        // Get power value based on battery's own display mode
+        guard let currentPowerW = powerManager.getPowerValue(for: batteryDisplayMode) else {
+            print("MenuBarController: No power value available for battery mode \(batteryDisplayMode)")
+            batteryTimeMenuItem?.title = "Battery: Calculating..."
+            return
+        }
+        
+        print("MenuBarController: Using power value: \(String(format: "%.1f", currentPowerW))W for battery calculation (mode: \(batteryDisplayMode))")
+        
+        // Format the remaining energy in Wh
+        let remainingWh = String(format: "%.1f", batteryInfo.remainingEnergyWh)
+        
+        // Calculate remaining time using current displayed power
+        if let remainingTime = BatteryService.calculateRemainingTime(batteryInfo: batteryInfo, averagePowerW: currentPowerW) {
+            let formattedTime = BatteryService.formatRemainingTime(remainingTime)
+            
+            let modeDisplay = batteryDisplayMode.displayName
+            if batteryInfo.isOnBatteryPower {
+                batteryTimeMenuItem?.title = "Battery: \(formattedTime) remaining (\(modeDisplay)) - \(remainingWh)Wh"
+                print("MenuBarController: Battery time updated: \(formattedTime) remaining (on battery, \(modeDisplay)) - \(remainingWh)Wh")
+            } else {
+                batteryTimeMenuItem?.title = "Battery: \(formattedTime) remaining (\(modeDisplay), charging) - \(remainingWh)Wh"
+                print("MenuBarController: Battery time updated: \(formattedTime) remaining (charging, \(modeDisplay)) - \(remainingWh)Wh")
+            }
+        } else {
+            // If we can't calculate time, at least show the energy remaining
+            let modeDisplay = batteryDisplayMode.displayName
+            if batteryInfo.isOnBatteryPower {
+                batteryTimeMenuItem?.title = "Battery: \(remainingWh)Wh remaining (\(modeDisplay))"
+                print("MenuBarController: Battery energy updated: \(remainingWh)Wh remaining (on battery, \(modeDisplay))")
+            } else {
+                batteryTimeMenuItem?.title = "Battery: \(remainingWh)Wh remaining (\(modeDisplay), charging)"
+                print("MenuBarController: Battery energy updated: \(remainingWh)Wh remaining (charging, \(modeDisplay))")
+            }
+        }
     }
 } 

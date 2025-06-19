@@ -67,10 +67,10 @@ extension MacMonMetrics {
     }
     
     /// Detailed breakdown for tooltip or menu
+        // Total: \(String(format: "%.1fW", allPower))
     var detailedBreakdown: String {
         return """
         System: \(String(format: "%.1fW", sysPower))
-        Total: \(String(format: "%.1fW", allPower))
         CPU: \(String(format: "%.1fW", cpuPower))
         GPU: \(String(format: "%.1fW", gpuPower))
         RAM: \(String(format: "%.1fW", ramPower))

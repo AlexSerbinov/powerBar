@@ -13,14 +13,12 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-charts", from: "1.0.0")
+        // Charts is a native Apple framework, no external dependency needed
     ],
     targets: [
         .executableTarget(
             name: "PowerBar",
-            dependencies: [
-                .product(name: "Charts", package: "swift-charts")
-            ],
+            dependencies: [],
             path: "Sources/PowerBar"
         )
     ]
