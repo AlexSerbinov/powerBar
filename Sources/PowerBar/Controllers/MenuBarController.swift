@@ -81,6 +81,20 @@ class MenuBarController: ObservableObject {
             displayModeSubmenu.addItem(avgItem)
         }
         
+        // Add separator and help text
+        displayModeSubmenu.addItem(NSMenuItem.separator())
+        let helpItem = NSMenuItem(title: "ℹ️ Averaging Period controls how power consumption is calculated:", action: nil, keyEquivalent: "")
+        helpItem.isEnabled = false
+        displayModeSubmenu.addItem(helpItem)
+        
+        let helpItem2 = NSMenuItem(title: "   • Instant: Real-time power readings (no averaging)", action: nil, keyEquivalent: "")
+        helpItem2.isEnabled = false
+        displayModeSubmenu.addItem(helpItem2)
+        
+        let helpItem3 = NSMenuItem(title: "   • Time periods: Average power over that duration", action: nil, keyEquivalent: "")
+        helpItem3.isEnabled = false
+        displayModeSubmenu.addItem(helpItem3)
+        
         displayModeItem.submenu = displayModeSubmenu
         menu.addItem(displayModeItem)
         
@@ -96,6 +110,20 @@ class MenuBarController: ObservableObject {
             intervalSubItem.tag = interval
             intervalSubmenu.addItem(intervalSubItem)
         }
+        
+        // Add separator and help text for refresh rate
+        intervalSubmenu.addItem(NSMenuItem.separator())
+        let refreshHelpItem = NSMenuItem(title: "ℹ️ Refresh Rate controls how often power data updates:", action: nil, keyEquivalent: "")
+        refreshHelpItem.isEnabled = false
+        intervalSubmenu.addItem(refreshHelpItem)
+        
+        let refreshHelpItem2 = NSMenuItem(title: "   • Lower values = more frequent updates (more CPU usage)", action: nil, keyEquivalent: "")
+        refreshHelpItem2.isEnabled = false
+        intervalSubmenu.addItem(refreshHelpItem2)
+        
+        let refreshHelpItem3 = NSMenuItem(title: "   • Higher values = less frequent updates (less CPU usage)", action: nil, keyEquivalent: "")
+        refreshHelpItem3.isEnabled = false
+        intervalSubmenu.addItem(refreshHelpItem3)
         
         intervalItem.submenu = intervalSubmenu
         menu.addItem(intervalItem)
@@ -123,6 +151,24 @@ class MenuBarController: ObservableObject {
             avgItem.tag = period
             batterySubmenu.addItem(avgItem)
         }
+        
+        // Add separator and help text for battery calculation
+        batterySubmenu.addItem(NSMenuItem.separator())
+        let batteryHelpItem = NSMenuItem(title: "ℹ️ Battery time calculation method:", action: nil, keyEquivalent: "")
+        batteryHelpItem.isEnabled = false
+        batterySubmenu.addItem(batteryHelpItem)
+        
+        let batteryHelpItem2 = NSMenuItem(title: "   • Instant: Uses current power consumption", action: nil, keyEquivalent: "")
+        batteryHelpItem2.isEnabled = false
+        batterySubmenu.addItem(batteryHelpItem2)
+        
+        let batteryHelpItem3 = NSMenuItem(title: "   • Time periods: Uses averaged power over that duration", action: nil, keyEquivalent: "")
+        batteryHelpItem3.isEnabled = false
+        batterySubmenu.addItem(batteryHelpItem3)
+        
+        let batteryHelpItem4 = NSMenuItem(title: "   • Longer periods = more stable battery estimates", action: nil, keyEquivalent: "")
+        batteryHelpItem4.isEnabled = false
+        batterySubmenu.addItem(batteryHelpItem4)
         
         batteryTimeMenuItem?.submenu = batterySubmenu
         menu.addItem(batteryTimeMenuItem!)
