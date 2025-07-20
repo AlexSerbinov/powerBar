@@ -73,6 +73,7 @@ extension MacMonMetrics {
         System: \(String(format: "%.1fW", sysPower))
         CPU: \(String(format: "%.1fW", cpuPower))
         GPU: \(String(format: "%.1fW", gpuPower))
+        ANE: \(String(format: "%.1fW", anePower))
         RAM: \(String(format: "%.1fW", ramPower))
         """
     }
