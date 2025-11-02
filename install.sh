@@ -45,17 +45,12 @@ else
     echo "⚠️  Warning: PowerBar.icns not found"
 fi
 
-# Create launch script that ensures proper working directory
-echo "📝 Creating launch wrapper..."
-cat > "$INSTALL_PATH/Contents/MacOS/PowerBar_wrapper" << 'EOF'
-#!/bin/bash
-cd "$(dirname "$0")"
-exec ./PowerBar
-EOF
-chmod +x "$INSTALL_PATH/Contents/MacOS/PowerBar_wrapper"
+# Note: No wrapper needed - PowerBar has hardcoded paths to macmon
+# Info.plist already points to PowerBar directly
 
-# Update Info.plist to use wrapper using plutil (more reliable than sed)
-plutil -replace CFBundleExecutable -string "PowerBar_wrapper" "$INSTALL_PATH/Contents/Info.plist"
+# Code sign the app for Gatekeeper compatibility (enables Finder launch)
+echo "🔐 Code signing app bundle..."
+codesign -f -s - "$INSTALL_PATH"
 
 # ----> ОСЬ КЛЮЧОВЕ ВИПРАВЛЕННЯ <----
 # Оновити дату модифікації, щоб Finder/LaunchServices оновили кеш іконок
