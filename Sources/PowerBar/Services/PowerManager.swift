@@ -34,7 +34,7 @@ class PowerManager: ObservableObject {
     @Published var isRunning = false
     @Published var errorMessage: String?
     @Published var updateInterval = 1000  // milliseconds
-    @Published var displayMode: DisplayMode = .instant
+    @Published var displayMode: DisplayMode = .average(seconds: 3)
     
     private var macmonProcess: Process?
     private let macmonPaths = [
@@ -48,7 +48,7 @@ class PowerManager: ObservableObject {
     private let maxHistoryDuration: TimeInterval = 21600  // 6 hours for graphs
     
     // Available periods for averaging (0 means max/all history)
-    let availableAveragePeriods = [5, 10, 15, 20, 30, 60, 300, 600, 1800, 3600, 0]
+    let availableAveragePeriods = [3, 10, 30, 60, 300, 600, 1800, 3600, 0]
     
     // Available periods for graphing
     let availableGraphPeriods = [60, 600, 3600, 21600]
