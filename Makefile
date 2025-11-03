@@ -1,4 +1,4 @@
-.PHONY: build install clean run test help
+.PHONY: build install clean run test help restart
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "  build     - Build PowerBar in release mode"
 	@echo "  install   - Install PowerBar to /Applications"
 	@echo "  run       - Build and run PowerBar"
+	@echo "  restart   - Full rebuild, reinstall and restart PowerBar"
 	@echo "  clean     - Clean build artifacts"
 	@echo "  test      - Run tests"
 	@echo "  check     - Check if macmon is available"
@@ -47,6 +48,10 @@ check:
 		echo "❌ macmon is not installed or not in PATH"; \
 		echo "   Install it: brew install macmon"; \
 	fi
+
+# Full restart cycle - kill, clean, rebuild, reinstall, launch
+restart:
+	@./rebuild_and_run.sh
 
 # Quick development cycle
 dev: clean build run 

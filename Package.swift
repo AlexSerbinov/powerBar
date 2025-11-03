@@ -13,7 +13,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        // No external dependencies required
+        // Charts is a native Apple framework, no external dependency needed
     ],
     targets: [
         .executableTarget(
@@ -22,4 +22,4 @@ let package = Package(
             path: "Sources/PowerBar"
         )
     ]
-) 
+)
